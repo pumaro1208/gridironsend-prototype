@@ -1,0 +1,32 @@
+name: Refresh rosters
+on:
+  schedule:
+    - cron: "0 8 1 * *"   # 08:00 UTC on the 1st of each month
+  workflow_dispatch: {}    # allow manual runs from the Actions tab
+permissions:
+  contents: write
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests beautifulsoup4 lxml
+      - name: Scrape all schools
+        run: python scrape_rosters.py schools_seed.csv players_new.csv
+      - name: Merge with carry-forward guard
+        run: python merge_rosters.py players_clean.csv players_new.csv
+      - name: Bank a dated season snapshot
+        run: cp players_clean.csv "history/$(date +%F).csv"
+      - name: Rebuild the page
+        run: python build_page.py
+      - name: Commit and push if changed
+        run: |
+          rm -f players_new.csv
+          git config user.name "pigskinpush-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git diff --staged --quiet || git commit -m "Refresh rosters $(date +%F)"
+          git push
