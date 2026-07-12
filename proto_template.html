@@ -210,9 +210,6 @@
         <label>Division</label>
         <select id="divSel">
           <option value="">All divisions</option>
-          <option value="FBS">FBS</option>
-          <option value="FCS">FCS</option>
-          <option value="D2">D2</option>
         </select>
       </div>
       <div class="who">Comparing <b id="whoTxt">a 6'4" / 285 lb OL</b><br>against each program's current room</div>
@@ -413,7 +410,12 @@ document.getElementById('confSel').onchange=e=>{state.conf=e.target.value;if(sta
 document.getElementById('openSel').onchange=e=>{state.open=e.target.value;render();};
 document.getElementById('qInp').oninput=e=>{state.q=e.target.value.trim();render();};
 document.getElementById('stSel').onchange=e=>{state.myState=e.target.value;if(state.school&&!schools().includes(state.school))state.school=null;render();};
-(function(){const c={};PLAYERS.forEach(p=>{if(p.stc)c[p.stc]=(c[p.stc]||0)+1;});
+(function(){
+ const ORDER=["FBS","FCS","D2","D3","NAIA","JUCO"];
+ const divs=[...new Set(PLAYERS.map(p=>p.d))].sort((a,b)=>(ORDER.indexOf(a)+99*(ORDER.indexOf(a)<0))-(ORDER.indexOf(b)+99*(ORDER.indexOf(b)<0)));
+ const dsel=document.getElementById('divSel');
+ divs.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;dsel.appendChild(o);});
+ const c={};PLAYERS.forEach(p=>{if(p.stc)c[p.stc]=(c[p.stc]||0)+1;});
  const sel=document.getElementById('stSel');
  Object.keys(c).sort((a,b)=>c[b]-c[a]).forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=`Recruits from ${ST_NAMES[k]} (${c[k].toLocaleString()} players)`;sel.appendChild(o);});
  rebuildConfSel();})();
