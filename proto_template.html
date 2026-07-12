@@ -105,6 +105,18 @@
   .filters2 input,.filters2 select{font-size:13.5px;padding:8px 11px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);font-family:inherit}
   .filters2 input{flex:1 1 200px;min-width:150px}
   .pc-h .cnt{float:right;color:#38415a;font-weight:700}
+  /* inline school expander */
+  .xp{background:#fbfbfd;border-bottom:1px solid var(--line);padding:12px 16px 14px;animation:xpin .18s ease}
+  @keyframes xpin{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .xp .row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+  .xp .kv{background:#fff;border:1px solid var(--line);border-radius:9px;padding:7px 10px;font-size:11.5px;color:var(--muted)}
+  .xp .kv b{display:block;font-size:15px;color:var(--ink);font-weight:800;margin-top:1px}
+  .xp .chips{display:flex;gap:5px;flex-wrap:wrap;margin:2px 0 10px}
+  .xp .chip{font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:14px;background:#eef0f5;color:#38415a}
+  .xp .chip.me{background:var(--red);color:#fff}
+  .xp .chip.st{background:var(--green-soft);color:#0a7d45}
+  .xp .lbl2{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:8px 0 5px}
+  .xp .go{display:inline-block;font-size:12px;font-weight:700;color:var(--red);cursor:pointer;margin-top:2px}
   @media(max-width:980px){.cols{grid-template-columns:1fr}.tiles{grid-template-columns:repeat(2,1fr)}}
   /* ---- phone layout ---- */
   @media(max-width:760px){
@@ -287,6 +299,14 @@ function openLevel(b){
   return{k:"lo",t:"tight room"};
 }
 
+function schoolSnapshot(s){
+  const sp=PLAYERS.filter(p=>p.s===s);
+  const rooms={};sp.forEach(p=>{if(p.p!=="OTHER")rooms[p.p]=(rooms[p.p]||0)+1;});
+  const grads=sp.filter(p=>p.cl==="SR"||p.cl==="GR").length;
+  const st={};sp.forEach(p=>{if(p.stc)st[p.stc]=(st[p.stc]||0)+1;});
+  const topSt=Object.entries(st).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  return {total:sp.length,rooms,grads,topSt};
+}
 function renderSchools(){
   const list=document.getElementById('schoolList');list.innerHTML="";
   let rows=schools().map(s=>({s,b:bench(s,state.pos)}));
@@ -305,6 +325,23 @@ function renderSchools(){
       <div style="font-size:10.5px;color:var(--muted);margin-top:3px">${b.n} at pos · ${b.seniors} Sr${state.myState?` · <b style=\"color:#0a7d45\">${state._stCnt[s]||0} from ${state.myState}</b>`:''}</div></div>`;
     el.onclick=()=>{state.school=s;render();};
     list.appendChild(el);
+    if(s===state.school){
+      const sn=schoolSnapshot(s), q=QLINKS[s];
+      const xp=document.createElement('div');xp.className="xp";
+      xp.innerHTML=`
+        <div class="row">
+          <div class="kv">Full roster<b>${sn.total}</b></div>
+          <div class="kv">Seniors/grads leaving<b>${sn.grads}</b></div>
+          <div class="kv">${POS_NAMES[state.pos]}<b>${b.n} players</b></div>
+        </div>
+        <div class="lbl2">Position rooms</div>
+        <div class="chips">${Object.keys(POS_NAMES).map(k=>sn.rooms[k]?`<span class="chip ${k===state.pos?'me':''}">${k} ${sn.rooms[k]}</span>`:'').join('')}</div>
+        <div class="lbl2">Recruits most from</div>
+        <div class="chips">${sn.topSt.length?sn.topSt.map(([k,c])=>`<span class="chip st">${ST_NAMES[k]||k} · ${c}</span>`).join(''):'<span class="chip">hometowns not published</span>'}</div>
+        <span class="go" onclick="document.getElementById('detail').scrollIntoView({behavior:'smooth'})">See full breakdown ↓</span>
+        ${q?`&nbsp; <a class="go" href="${q}" target="_blank" rel="noopener" style="text-decoration:none">Recruit questionnaire ↗</a>`:''}`;
+      list.appendChild(xp);
+    }
   });
 }
 function initials(s){return s.split(/[\s.]+/).filter(Boolean).slice(0,2).map(w=>w[0]).join("").toUpperCase();}
