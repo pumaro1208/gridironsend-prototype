@@ -101,6 +101,39 @@
   .cta .note{font-size:12px;color:var(--muted);flex:1;min-width:180px}
   .foot{font-size:11.5px;color:var(--muted);margin-top:18px;text-align:center}
   @media(max-width:980px){.cols{grid-template-columns:1fr}.tiles{grid-template-columns:repeat(2,1fr)}}
+  /* ---- phone layout ---- */
+  @media(max-width:760px){
+    body{flex-direction:column}
+    .side{width:100%;flex-direction:row;align-items:center;gap:10px;padding:12px 16px}
+    .side .divider,.side .nav-label,.side .nav-item,.side .spacer,.side .me{display:none}
+    .brand-sub{padding:0;font-size:0;margin-left:auto;text-align:right}
+    .brand-sub b{font-size:11px}
+    .brand-sub br{display:none}
+    .main{padding:16px 14px;max-width:none}
+    .head h2{font-size:19px}
+    .head p{font-size:12.5px}
+    .demo-tag{display:block;width:max-content;margin:6px 0 0}
+    .profile{padding:12px;gap:12px}
+    .profile .f{flex:1 1 40%}
+    .profile select,.profile input{width:100%;font-size:16px} /* 16px stops iOS auto-zoom */
+    .profile .who{flex-basis:100%;text-align:left;margin-left:0}
+    #schoolList{max-height:44vh;overflow-y:auto}
+    .school-item{padding:11px 12px}
+    .tiles{grid-template-columns:repeat(2,1fr);gap:9px;padding:12px}
+    .tile{padding:11px}
+    .tile .val{font-size:19px}
+    .fit{margin:0 12px 12px;font-size:12.5px}
+    .sec-h,.leg{padding-left:12px;padding-right:12px}
+    .classbars{padding:8px 12px 4px;gap:8px;height:80px}
+    th,td{padding:8px 10px;font-size:12px}
+    th:nth-child(5),td:nth-child(5){display:none} /* hide hometown on small screens */
+    .dt-top{padding:12px}
+    .posselect{width:100%}
+    .dt-top>div:last-child{flex-basis:100%}
+    .cta{padding:12px;gap:10px}
+    .cta .btn{flex:1 1 auto;justify-content:center}
+    .cta .note{flex-basis:100%}
+  }
 </style>
 </head>
 <body>
