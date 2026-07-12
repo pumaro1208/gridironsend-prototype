@@ -333,6 +333,12 @@ function schoolSnapshot(s){
   const topSt=Object.entries(st).sort((a,b)=>b[1]-a[1]).slice(0,3);
   return {total:sp.length,rooms,grads,topSt};
 }
+function cardRank(b){
+  const ws=b.g.map(p=>p.w).filter(x=>x!=null);
+  if(ws.length<3)return ` · ${b.n} at pos`;
+  const r=ws.filter(x=>x>state.wt).length+1;
+  return ` · <b style="color:#38415a">you'd be #${r} of ${ws.length}</b> by wt`;
+}
 function renderSchools(){
   const list=document.getElementById('schoolList');list.innerHTML="";
   let rows=schools().map(s=>({s,b:bench(s,state.pos)}));
@@ -348,7 +354,7 @@ function renderSchools(){
     el.innerHTML=`<div class="logo" style="background:${LOGO[s]||colorFor(s)}">${initials(s)}</div>
       <div class="si-main"><div class="nm">${s}</div><div class="dv">${div.d} · ${div.c}</div></div>
       <div style="text-align:right"><div class="open-badge op-${ol.k}">${ol.t}</div>
-      <div style="font-size:10.5px;color:var(--muted);margin-top:3px">${b.n} at pos · ${b.gone} gone by '${String(state.entry).slice(2)}${state.myState?` · <b style=\"color:#0a7d45\">${state._stCnt[s]||0} from ${state.myState}</b>`:''}</div></div>
+      <div style="font-size:10.5px;color:var(--muted);margin-top:3px">${b.gone} gone by '${String(state.entry).slice(2)}${cardRank(b)}${state.myState?` · <b style=\"color:#0a7d45\">${state._stCnt[s]||0} from ${state.myState}</b>`:''}</div></div>
       <span class="star ${state.starred.has(s)?'on':''}" title="Add to My Schools">★</span>`;
     el.onclick=()=>{state.school=s;render();};
     el.querySelector('.star').onclick=ev=>{ev.stopPropagation();toggleStar(s);};
@@ -469,7 +475,7 @@ function render(){if(!state.school)state.school=schools()[0];
 
 // controls
 document.getElementById('posSel').onchange=e=>{state.pos=e.target.value;syncWho();render();};
-function updHt(){state.ht=parseInt(document.getElementById('ftSel').value)*12+parseInt(document.getElementById('inSel').value);syncWho();renderDetail();syncHash();}
+function updHt(){state.ht=parseInt(document.getElementById('ftSel').value)*12+parseInt(document.getElementById('inSel').value);syncWho();clearTimeout(window._rT);window._rT=setTimeout(render,200);}
 document.getElementById('ftSel').onchange=updHt;
 document.getElementById('inSel').onchange=updHt;
 document.getElementById('entrySel').onchange=e=>{state.entry=parseInt(e.target.value);render();};
@@ -508,7 +514,7 @@ document.getElementById('stSel').onchange=e=>{state.myState=e.target.value;if(st
  document.getElementById('qInp').value=state.q;
  rebuildConfSel();
  if(state.conf)document.getElementById('confSel').value=state.conf;})();
-document.getElementById('wtInp').oninput=e=>{state.wt=parseInt(e.target.value)||0;syncWho();renderDetail();syncHash();};
+document.getElementById('wtInp').oninput=e=>{state.wt=parseInt(e.target.value)||0;syncWho();clearTimeout(window._rT);window._rT=setTimeout(render,200);};
 
 syncWho();render();
 </script>
