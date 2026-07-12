@@ -5,11 +5,14 @@ in the page copy."""
 import csv, json, re
 
 import os
-QUESTIONNAIRES = {}
+OUTREACH = {}
 if os.path.exists("questionnaires.csv"):
     for r in csv.DictReader(open("questionnaires.csv", encoding="utf-8")):
-        if r.get("questionnaire_url", "").strip():
-            QUESTIONNAIRES[r["school"]] = r["questionnaire_url"].strip()
+        e = {}
+        if r.get("questionnaire_url", "").strip(): e["q"] = r["questionnaire_url"].strip()
+        if r.get("camp_url", "").strip():          e["camp"] = r["camp_url"].strip()
+        if r.get("recruiting_email", "").strip():  e["em"] = r["recruiting_email"].strip()
+        if e: OUTREACH[r["school"]] = e
 
 rows = list(csv.DictReader(open("players_clean.csv", encoding="utf-8")))
 seen = {}
@@ -27,7 +30,7 @@ players = [dict(
 
 n_players, n_schools = len(players), len({p["s"] for p in players})
 divs = sorted({p["d"] for p in players})
-data = json.dumps({"players": players, "questionnaires": QUESTIONNAIRES}, separators=(",",":"))
+data = json.dumps({"players": players, "outreach": OUTREACH}, separators=(",",":"))
 
 html = open("proto_template.html", encoding="utf-8").read()
 html = html.replace("/*__DATA__*/", data)

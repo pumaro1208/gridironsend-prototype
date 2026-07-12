@@ -259,7 +259,8 @@
 
 <script>
 const DATA = /*__DATA__*/;
-const PLAYERS = DATA.players, QLINKS = DATA.questionnaires;
+const PLAYERS = DATA.players, OUTREACH = DATA.outreach||DATA.questionnaires||{};
+function outreachOf(s){const o=OUTREACH[s];return typeof o==="string"?{q:o}:(o||{});}
 const POS_NAMES={QB:"Quarterbacks",RB:"Running Backs",WR:"Wide Receivers",TE:"Tight Ends",OL:"Offensive Line",DL:"Defensive Line",LB:"Linebackers",DB:"Defensive Backs",ST:"Special Teams"};
 const LOGO={"Baylor":"#154734","Houston":"#c8102e","UTSA":"#00274c","Texas State":"#5a1a2b","SMU":"#354ca1","Stephen F. Austin":"#4b0082"};
 const CLS_ORDER=["FR","SO","JR","SR","GR"];
@@ -360,7 +361,7 @@ function renderSchools(){
     el.querySelector('.star').onclick=ev=>{ev.stopPropagation();toggleStar(s);};
     list.appendChild(el);
     if(s===state.school){
-      const sn=schoolSnapshot(s), q=QLINKS[s];
+      const sn=schoolSnapshot(s), o=outreachOf(s);
       const xp=document.createElement('div');xp.className="xp";
       xp.innerHTML=`
         <div class="row">
@@ -373,7 +374,9 @@ function renderSchools(){
         <div class="lbl2">Recruits most from</div>
         <div class="chips">${sn.topSt.length?sn.topSt.map(([k,c])=>`<span class="chip st">${ST_NAMES[k]||k} · ${c}</span>`).join(''):'<span class="chip">hometowns not published</span>'}</div>
         <span class="go" onclick="document.getElementById('detail').scrollIntoView({behavior:'smooth'})">See full breakdown ↓</span>
-        ${q?`&nbsp; <a class="go" href="${q}" target="_blank" rel="noopener" style="text-decoration:none">Recruit questionnaire ↗</a>`:''}`;
+        ${o.q?`&nbsp; <a class="go" href="${o.q}" target="_blank" rel="noopener" style="text-decoration:none">Recruit questionnaire ↗</a>`
+          :o.camp?`&nbsp; <a class="go" href="${o.camp}" target="_blank" rel="noopener" style="text-decoration:none">Camp registration ↗</a>`
+          :o.em?`&nbsp; <a class="go" href="mailto:${o.em}" style="text-decoration:none">Email recruiting staff ✉</a>`:''}`;
       list.appendChild(xp);
     }
   });
@@ -398,7 +401,7 @@ function rankLine(b){
 function renderDetail(){
   const d=document.getElementById('detail');
   const s=state.school, b=bench(s,state.pos), div=PLAYERS.find(p=>p.s===s);
-  const q=QLINKS[s];
+  const o=outreachOf(s);
   // fit
   let fit="",fcls="mid";
   if(b.avgW){
@@ -439,10 +442,16 @@ function renderDetail(){
     <div class="leg">Blue = underclass returning · <b class="sr">Red = seniors/grads leaving</b>. More red than blue at your position = a room turning over.</div>
     <table><thead><tr><th>${POS_NAMES[state.pos]}</th><th>Class</th><th class="r">Ht</th><th class="r">Wt</th><th>Hometown</th></tr></thead><tbody>${roster}</tbody></table>
     <div class="cta">
-      ${q?`<a class="btn" href="${q}" target="_blank" rel="noopener">✎ Fill out recruit questionnaire</a>`:`<button class="btn ghost" disabled>Questionnaire link not on file</button>`}
+      ${o.q?`<a class="btn" href="${o.q}" target="_blank" rel="noopener">✎ Fill out recruit questionnaire</a>`
+        :o.camp?`<a class="btn" href="${o.camp}" target="_blank" rel="noopener">🏕 Register for their camp</a>`
+        :o.em?`<a class="btn" href="mailto:${o.em}">✉ Email recruiting staff</a>`
+        :`<button class="btn ghost" disabled>No public outreach link on file</button>`}
       <button class="btn ghost" id="starBig">${state.starred.has(s)?'★ In My Schools':'☆ Add to My Schools'}</button>
       <button class="btn ghost" id="copyBtn">🔗 Copy link</button>
-      <div class="note">Email-free first touch: the questionnaire is the program's official front door and coaches monitor it. ${q?'':'(link is a data gap to fill)'}</div>
+      <div class="note">${o.q?"Email-free first touch: the questionnaire is the program's official front door and coaches monitor it."
+        :o.camp?"No public questionnaire — this program recruits through its camps. Camp registration is the front door."
+        :o.em?"No public form — reach out directly to the recruiting staff."
+        :"No public outreach channel found for this program yet."}</div>
     </div>`;
   document.getElementById('posSel2').onchange=e=>{state.pos=e.target.value;document.getElementById('posSel').value=state.pos;syncWho();render();};
   document.getElementById('starBig').onclick=()=>toggleStar(s);
