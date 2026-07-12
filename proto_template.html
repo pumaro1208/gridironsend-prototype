@@ -117,6 +117,15 @@
   .xp .chip.st{background:var(--green-soft);color:#0a7d45}
   .xp .lbl2{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:8px 0 5px}
   .xp .go{display:inline-block;font-size:12px;font-weight:700;color:var(--red);cursor:pointer;margin-top:2px}
+  .star{font-size:17px;color:#c4cad6;cursor:pointer;padding:2px 4px;flex-shrink:0;line-height:1}
+  .star.on{color:var(--amber)}
+  .starbtn{font-size:13.5px;padding:8px 13px;border:1px solid var(--line);border-radius:9px;background:#fff;cursor:pointer;font-family:inherit;color:#38415a;font-weight:600}
+  .starbtn.on{background:#fff7e6;border-color:#f5d08c;color:#96620a}
+  .empty{padding:26px 16px;text-align:center;color:var(--muted);font-size:13.5px}
+  .empty button{margin-top:10px;background:var(--red);border:none;color:#fff;font-weight:700;font-size:13px;padding:9px 16px;border-radius:9px;cursor:pointer;font-family:inherit}
+  .rankline{margin:-6px 20px 14px;font-size:12.5px;color:var(--muted)}
+  .rankline b{color:var(--ink)}
+  @media(max-width:760px){.rankline{margin:-4px 12px 12px}}
   @media(max-width:980px){.cols{grid-template-columns:1fr}.tiles{grid-template-columns:repeat(2,1fr)}}
   /* ---- phone layout ---- */
   @media(max-width:760px){
@@ -207,6 +216,15 @@
         <input id="wtInp" type="number" value="285" style="width:90px">
       </div>
       <div class="f">
+        <label>Class of</label>
+        <select id="entrySel">
+          <option value="2027">2027</option>
+          <option value="2028" selected>2028</option>
+          <option value="2029">2029</option>
+          <option value="2030">2030</option>
+        </select>
+      </div>
+      <div class="f">
         <label>Division</label>
         <select id="divSel">
           <option value="">All divisions</option>
@@ -225,6 +243,7 @@
         <option value="lo">Tight room</option>
       </select>
       <select id="stSel"><option value="">Recruits from… (any state)</option></select>
+      <button class="starbtn" id="starBtn" title="Show only starred schools">★ My Schools</button>
     </div>
 
     <div class="cols">
@@ -244,7 +263,14 @@ const PLAYERS = DATA.players, QLINKS = DATA.questionnaires;
 const POS_NAMES={QB:"Quarterbacks",RB:"Running Backs",WR:"Wide Receivers",TE:"Tight Ends",OL:"Offensive Line",DL:"Defensive Line",LB:"Linebackers",DB:"Defensive Backs",ST:"Special Teams"};
 const LOGO={"Baylor":"#154734","Houston":"#c8102e","UTSA":"#00274c","Texas State":"#5a1a2b","SMU":"#354ca1","Stephen F. Austin":"#4b0082"};
 const CLS_ORDER=["FR","SO","JR","SR","GR"];
-const state={school:null,pos:"OL",ht:76,wt:285,div:"",conf:"",q:"",open:"",myState:""};
+const state={school:null,pos:"OL",ht:76,wt:285,entry:2028,div:"",conf:"",q:"",open:"",myState:"",starOnly:false};
+function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+state.starred=new Set(JSON.parse(lsGet("pp_starred")||"[]"));
+function toggleStar(s){state.starred.has(s)?state.starred.delete(s):state.starred.add(s);lsSet("pp_starred",JSON.stringify([...state.starred]));render();}
+function colorFor(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return `hsl(${h%360},45%,32%)`;}
+// seasons remaining by listed class (+1 for redshirts, capped)
+function yearsLeft(p){const base={GR:0,SR:0,JR:1,SO:2,FR:3}[p.cl];return Math.min((base==null?1:base)+(p.rs?1:0),4);}
 
 // --- home-state normalization ("Texas" / "Fla." / "TX" -> "TX") ---
 const ST_NAMES={AL:"Alabama",AK:"Alaska",AZ:"Arizona",AR:"Arkansas",CA:"California",CO:"Colorado",CT:"Connecticut",DE:"Delaware",FL:"Florida",GA:"Georgia",HI:"Hawaii",ID:"Idaho",IL:"Illinois",IN:"Indiana",IA:"Iowa",KS:"Kansas",KY:"Kentucky",LA:"Louisiana",ME:"Maine",MD:"Maryland",MA:"Massachusetts",MI:"Michigan",MN:"Minnesota",MS:"Mississippi",MO:"Missouri",MT:"Montana",NE:"Nebraska",NV:"Nevada",NH:"New Hampshire",NJ:"New Jersey",NM:"New Mexico",NY:"New York",NC:"North Carolina",ND:"North Dakota",OH:"Ohio",OK:"Oklahoma",OR:"Oregon",PA:"Pennsylvania",RI:"Rhode Island",SC:"South Carolina",SD:"South Dakota",TN:"Tennessee",TX:"Texas",UT:"Utah",VT:"Vermont",VA:"Virginia",WA:"Washington",WV:"West Virginia",WI:"Wisconsin",WY:"Wyoming",DC:"Washington DC"};
@@ -261,6 +287,7 @@ function schools(){
   let f=state.div?PLAYERS.filter(p=>p.d===state.div):PLAYERS;
   if(state.conf)f=f.filter(p=>p.c===state.conf);
   let names=[...new Set(f.map(p=>p.s))];
+  if(state.starOnly)names=names.filter(n=>state.starred.has(n));
   if(state.q){const q=state.q.toLowerCase();names=names.filter(n=>n.toLowerCase().includes(q));}
   if(state.myState){
     const cnt={};
@@ -286,13 +313,15 @@ function bench(school,pos){
   const g=group(school,pos);
   const dist={};CLS_ORDER.forEach(c=>dist[c]=g.filter(p=>p.cl===c).length);
   const seniors=dist.SR+dist.GR;
-  return {g,n:g.length,avgH:avg(g.map(p=>p.h)),avgW:avg(g.map(p=>p.w)),dist,seniors};
+  const horizon=Math.max(state.entry-2027,0)+1; // seasons completed before you enroll
+  const gone=g.filter(p=>yearsLeft(p)<horizon).length;
+  return {g,n:g.length,avgH:avg(g.map(p=>p.h)),avgW:avg(g.map(p=>p.w)),dist,seniors,gone};
 }
 function openLevel(b){
   if(b.n===0)return{k:"lo",t:"no data"};
-  const r=b.seniors/b.n;
-  if(b.seniors>=3&&r>=0.22)return{k:"hi",t:"opening likely"};
-  if(b.seniors>=1)return{k:"md",t:"possible"};
+  const r=b.gone/b.n;
+  if(b.gone>=3&&r>=0.22)return{k:"hi",t:"opening likely"};
+  if(b.gone>=1)return{k:"md",t:"possible"};
   return{k:"lo",t:"tight room"};
 }
 
@@ -308,7 +337,7 @@ function renderSchools(){
   const list=document.getElementById('schoolList');list.innerHTML="";
   let rows=schools().map(s=>({s,b:bench(s,state.pos)}));
   if(state.open)rows=rows.filter(r=>openLevel(r.b).k===state.open);
-  rows.sort((a,b)=>b.b.seniors-a.b.seniors);
+  rows.sort((a,b)=>b.b.gone-a.b.gone);
   if(state.myState)rows.sort((a,b)=>(state._stCnt[b.s]||0)-(state._stCnt[a.s]||0));
   document.getElementById('listCnt').textContent=rows.length+" shown";
   rows.forEach(({s,b})=>{
@@ -316,11 +345,13 @@ function renderSchools(){
     const div=PLAYERS.find(p=>p.s===s);
     const el=document.createElement('div');
     el.className="school-item"+(s===state.school?" active":"");
-    el.innerHTML=`<div class="logo" style="background:${LOGO[s]||'#333'}">${initials(s)}</div>
+    el.innerHTML=`<div class="logo" style="background:${LOGO[s]||colorFor(s)}">${initials(s)}</div>
       <div class="si-main"><div class="nm">${s}</div><div class="dv">${div.d} · ${div.c}</div></div>
       <div style="text-align:right"><div class="open-badge op-${ol.k}">${ol.t}</div>
-      <div style="font-size:10.5px;color:var(--muted);margin-top:3px">${b.n} at pos · ${b.seniors} Sr${state.myState?` · <b style=\"color:#0a7d45\">${state._stCnt[s]||0} from ${state.myState}</b>`:''}</div></div>`;
+      <div style="font-size:10.5px;color:var(--muted);margin-top:3px">${b.n} at pos · ${b.gone} gone by '${String(state.entry).slice(2)}${state.myState?` · <b style=\"color:#0a7d45\">${state._stCnt[s]||0} from ${state.myState}</b>`:''}</div></div>
+      <span class="star ${state.starred.has(s)?'on':''}" title="Add to My Schools">★</span>`;
     el.onclick=()=>{state.school=s;render();};
+    el.querySelector('.star').onclick=ev=>{ev.stopPropagation();toggleStar(s);};
     list.appendChild(el);
     if(s===state.school){
       const sn=schoolSnapshot(s), q=QLINKS[s];
@@ -340,9 +371,24 @@ function renderSchools(){
       list.appendChild(xp);
     }
   });
+  if(!rows.length){
+    const d=document.createElement('div');d.className="empty";
+    d.innerHTML=`No schools match those filters.<br><button id="clearF">Clear all filters</button>`;
+    list.appendChild(d);
+    d.querySelector('#clearF').onclick=()=>{state.div=state.conf=state.q=state.open=state.myState="";state.starOnly=false;
+      document.getElementById('qInp').value="";document.getElementById('divSel').value="";document.getElementById('openSel').value="";document.getElementById('stSel').value="";rebuildConfSel();render();};
+  }
 }
 function initials(s){return s.split(/[\s.]+/).filter(Boolean).slice(0,2).map(w=>w[0]).join("").toUpperCase();}
 
+function rankLine(b){
+  const ws=b.g.map(p=>p.w).filter(x=>x!=null).sort((a,c)=>c-a);
+  const hs=b.g.map(p=>p.h).filter(x=>x!=null).sort((a,c)=>c-a);
+  if(ws.length<3)return "";
+  const wr=ws.filter(x=>x>state.wt).length+1, hr=hs.filter(x=>x>state.ht).length+1;
+  const ord=n=>n+(["th","st","nd","rd"][((n%100-20)%10)]||["th","st","nd","rd"][n%100]||"th");
+  return `<div class="rankline">On this roster you'd be the <b>${ord(wr)} heaviest</b> of ${ws.length} ${state.pos}${hs.length>2?` and the <b>${ord(hr)} tallest</b>`:''}.</div>`;
+}
 function renderDetail(){
   const d=document.getElementById('detail');
   const s=state.school, b=bench(s,state.pos), div=PLAYERS.find(p=>p.s===s);
@@ -370,7 +416,7 @@ function renderDetail(){
 
   d.innerHTML=`
     <div class="dt-top">
-      <div class="l"><div class="logo" style="background:${LOGO[s]||'#333'}">${initials(s)}</div>
+      <div class="l"><div class="logo" style="background:${LOGO[s]||colorFor(s)}">${initials(s)}</div>
         <div><h3>${s}</h3><div class="meta">${div.d} · ${div.c}</div></div></div>
       <div><select class="posselect" id="posSel2">${Object.keys(POS_NAMES).map(k=>`<option value="${k}" ${k===state.pos?'selected':''}>${POS_NAMES[k]}</option>`).join("")}</select></div>
     </div>
@@ -378,33 +424,56 @@ function renderDetail(){
       <div class="tile"><div class="lbl">Players at position</div><div class="val">${b.n}</div><div class="sub">${POS_NAMES[state.pos]}</div></div>
       <div class="tile"><div class="lbl">Avg height</div><div class="val">${dispH(b.avgH)}</div><div class="sub">current room</div></div>
       <div class="tile"><div class="lbl">Avg weight</div><div class="val">${b.avgW?b.avgW+' lb':'—'}</div><div class="sub">current room</div></div>
-      <div class="tile accent"><div class="lbl">Seniors leaving</div><div class="val">${b.seniors}</div><div class="sub">spots opening soon</div></div>
+      <div class="tile accent"><div class="lbl">Gone by ${state.entry}</div><div class="val">${b.gone}</div><div class="sub">of ${b.n} leave before you enroll</div></div>
     </div>
     <div class="fit ${fcls}"><span class="dot"></span><div>${fit}</div></div>
+    ${rankLine(b)}
     <div class="sec-h">Roster composition by class</div>
     <div class="classbars">${bars}</div>
     <div class="leg">Blue = underclass returning · <b class="sr">Red = seniors/grads leaving</b>. More red than blue at your position = a room turning over.</div>
     <table><thead><tr><th>${POS_NAMES[state.pos]}</th><th>Class</th><th class="r">Ht</th><th class="r">Wt</th><th>Hometown</th></tr></thead><tbody>${roster}</tbody></table>
     <div class="cta">
       ${q?`<a class="btn" href="${q}" target="_blank" rel="noopener">✎ Fill out recruit questionnaire</a>`:`<button class="btn ghost" disabled>Questionnaire link not on file</button>`}
-      <button class="btn ghost">☆ Add to campaign</button>
+      <button class="btn ghost" id="starBig">${state.starred.has(s)?'★ In My Schools':'☆ Add to My Schools'}</button>
+      <button class="btn ghost" id="copyBtn">🔗 Copy link</button>
       <div class="note">Email-free first touch: the questionnaire is the program's official front door and coaches monitor it. ${q?'':'(link is a data gap to fill)'}</div>
     </div>`;
   document.getElementById('posSel2').onchange=e=>{state.pos=e.target.value;document.getElementById('posSel').value=state.pos;syncWho();render();};
+  document.getElementById('starBig').onclick=()=>toggleStar(s);
+  document.getElementById('copyBtn').onclick=ev=>{
+    const btn=ev.target;
+    (navigator.clipboard?navigator.clipboard.writeText(location.href):Promise.reject()).then(
+      ()=>{btn.textContent="✓ Copied";setTimeout(()=>btn.textContent="🔗 Copy link",1500);},
+      ()=>{prompt("Copy this link:",location.href);});
+  };
 }
 
 function syncWho(){
   document.getElementById('whoTxt').textContent=`a ${dispH(state.ht)} / ${state.wt} lb ${state.pos}`;
   document.getElementById('whoami').textContent=`${state.pos} · 2027`;
 }
-function render(){if(!state.school)state.school=schools()[0];renderSchools();renderDetail();
+function syncHash(){
+  const p=new URLSearchParams({p:state.pos,h:state.ht,w:state.wt,e:state.entry});
+  if(state.div)p.set("d",state.div); if(state.conf)p.set("c",state.conf);
+  if(state.open)p.set("o",state.open); if(state.myState)p.set("st",state.myState);
+  if(state.q)p.set("q",state.q); if(state.school)p.set("s",state.school);
+  history.replaceState(null,"","#"+p.toString());
+}
+function render(){if(!state.school)state.school=schools()[0];
+  const sb=document.getElementById('starBtn');
+  sb.className="starbtn"+(state.starOnly?" on":"");
+  sb.textContent=`★ My Schools${state.starred.size?" ("+state.starred.size+")":""}`;
+  syncHash();lsSet("pp_profile",JSON.stringify({pos:state.pos,ht:state.ht,wt:state.wt,entry:state.entry,myState:state.myState}));
+  renderSchools();renderDetail();
   document.getElementById('foot').textContent=`Prototype wired to real roster data pulled from official team pages (512 players / 6 schools). RosterIQ, fit, and questionnaire routing all run without any coach email.`;}
 
 // controls
 document.getElementById('posSel').onchange=e=>{state.pos=e.target.value;syncWho();render();};
-function updHt(){state.ht=parseInt(document.getElementById('ftSel').value)*12+parseInt(document.getElementById('inSel').value);syncWho();renderDetail();}
+function updHt(){state.ht=parseInt(document.getElementById('ftSel').value)*12+parseInt(document.getElementById('inSel').value);syncWho();renderDetail();syncHash();}
 document.getElementById('ftSel').onchange=updHt;
 document.getElementById('inSel').onchange=updHt;
+document.getElementById('entrySel').onchange=e=>{state.entry=parseInt(e.target.value);render();};
+document.getElementById('starBtn').onclick=()=>{state.starOnly=!state.starOnly;render();};
 document.getElementById('divSel').onchange=e=>{state.div=e.target.value;rebuildConfSel();if(state.school&&!schools().includes(state.school))state.school=null;render();};
 document.getElementById('confSel').onchange=e=>{state.conf=e.target.value;if(state.school&&!schools().includes(state.school))state.school=null;render();};
 document.getElementById('openSel').onchange=e=>{state.open=e.target.value;render();};
@@ -418,8 +487,28 @@ document.getElementById('stSel').onchange=e=>{state.myState=e.target.value;if(st
  const c={};PLAYERS.forEach(p=>{if(p.stc)c[p.stc]=(c[p.stc]||0)+1;});
  const sel=document.getElementById('stSel');
  Object.keys(c).sort((a,b)=>c[b]-c[a]).forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=`Recruits from ${ST_NAMES[k]} (${c[k].toLocaleString()} players)`;sel.appendChild(o);});
- rebuildConfSel();})();
-document.getElementById('wtInp').oninput=e=>{state.wt=parseInt(e.target.value)||0;syncWho();renderDetail();};
+ rebuildConfSel();
+ // restore saved profile, then URL hash overrides
+ try{const sv=JSON.parse(lsGet("pp_profile")||"null");if(sv){Object.assign(state,{pos:sv.pos||state.pos,ht:sv.ht||state.ht,wt:sv.wt||state.wt,entry:sv.entry||state.entry,myState:sv.myState||""});}}catch(e){}
+ const hp=new URLSearchParams(location.hash.slice(1));
+ if(hp.get("p"))state.pos=hp.get("p"); if(hp.get("h"))state.ht=parseInt(hp.get("h"));
+ if(hp.get("w"))state.wt=parseInt(hp.get("w")); if(hp.get("e"))state.entry=parseInt(hp.get("e"));
+ if(hp.get("d"))state.div=hp.get("d"); if(hp.get("c"))state.conf=hp.get("c");
+ if(hp.get("o"))state.open=hp.get("o"); if(hp.get("st"))state.myState=hp.get("st");
+ if(hp.get("q"))state.q=hp.get("q"); if(hp.get("s"))state.school=hp.get("s");
+ // reflect state into controls
+ document.getElementById('posSel').value=state.pos;
+ document.getElementById('ftSel').value=Math.floor(state.ht/12);
+ document.getElementById('inSel').value=state.ht%12;
+ document.getElementById('wtInp').value=state.wt;
+ document.getElementById('entrySel').value=state.entry;
+ document.getElementById('divSel').value=state.div;
+ document.getElementById('openSel').value=state.open;
+ document.getElementById('stSel').value=state.myState;
+ document.getElementById('qInp').value=state.q;
+ rebuildConfSel();
+ if(state.conf)document.getElementById('confSel').value=state.conf;})();
+document.getElementById('wtInp').oninput=e=>{state.wt=parseInt(e.target.value)||0;syncWho();renderDetail();syncHash();};
 
 syncWho();render();
 </script>
