@@ -4,13 +4,12 @@ Dedupes school+name rows, embeds the dataset, and updates the counts shown
 in the page copy."""
 import csv, json, re
 
-QUESTIONNAIRES = {
- "Baylor":"https://questionnaires.armssoftware.com/aa72ebcc5cb6",
- "Houston":"https://my.armssoftware.com/arms/public/questionnaire/9ff8090d45d9",
- "UTSA":"https://questionnaires.armssoftware.com/1a6c084f40d1",
- "SMU":"https://questionnaires.armssoftware.com/af6eb6d29764",
- "Texas State":"https://txst.com/sb_output.aspx?form=26",
-}
+import os
+QUESTIONNAIRES = {}
+if os.path.exists("questionnaires.csv"):
+    for r in csv.DictReader(open("questionnaires.csv", encoding="utf-8")):
+        if r.get("questionnaire_url", "").strip():
+            QUESTIONNAIRES[r["school"]] = r["questionnaire_url"].strip()
 
 rows = list(csv.DictReader(open("players_clean.csv", encoding="utf-8")))
 seen = {}
