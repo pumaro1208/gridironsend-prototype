@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PigskinPush — Interactive Prototype</title>
+<style>
+  :root{
+    --navy:#0d1322;--red:#f4425a;--green:#16b364;--green-soft:#d9f7e6;
+    --blue:#3b82f6;--amber:#f59e0b;--amber-soft:#fdecc8;--red-soft:#ffe3e8;
+    --ink:#0f1729;--muted:#6b7690;--line:#eceef3;--bg:#f6f7f9;--card:#fff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);display:flex;min-height:100vh;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  /* sidebar */
+  .side{width:214px;background:var(--navy);color:#c7cede;flex-shrink:0;padding:20px 15px;display:flex;flex-direction:column;gap:5px}
+  .brand{display:flex;align-items:center;gap:8px;padding:2px 6px}
+  .bolt{width:24px;height:24px;color:var(--red)}
+  .brand h1{font-size:18px;color:#fff;font-weight:800;letter-spacing:-.4px}
+  .brand-sub{font-size:11px;color:#7d879e;padding:2px 8px 0}
+  .brand-sub b{color:#aeb7cc;font-weight:600}
+  .divider{height:1px;background:#1f2942;margin:14px 4px}
+  .nav-label{font-size:10px;letter-spacing:.12em;color:#5f6a85;font-weight:700;padding:6px 8px 2px}
+  .nav-item{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:8px;font-size:13.5px;color:#c7cede}
+  .nav-item.active{background:var(--red);color:#fff;font-weight:600}
+  .nav-item .ic{width:15px;height:15px}
+  .spacer{flex:1}
+  .me{display:flex;align-items:center;gap:9px;padding:7px}
+  .me .av{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#f4425a,#f59e0b);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:11px}
+  .me small{display:block;color:#7d879e;font-size:11px}
+  /* main */
+  .main{flex:1;padding:26px 32px;overflow:auto;max-width:1500px}
+  .head h2{font-size:23px;font-weight:800;letter-spacing:-.4px}
+  .head p{color:var(--muted);font-size:13.5px;margin-top:4px}
+  .demo-tag{display:inline-block;background:#0d1322;color:#ffd9df;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.03em;margin-left:8px;vertical-align:middle}
+  /* profile bar */
+  .profile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 18px;margin:18px 0;display:flex;align-items:flex-end;gap:22px;flex-wrap:wrap}
+  .profile .f{display:flex;flex-direction:column;gap:5px}
+  .profile label{font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .profile select,.profile input{font-size:14px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);font-family:inherit}
+  .profile .who{margin-left:auto;font-size:12.5px;color:var(--muted);text-align:right;line-height:1.5}
+  .profile .who b{color:var(--ink)}
+  /* layout */
+  .cols{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start}
+  .panel-card{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .pc-h{padding:13px 16px;border-bottom:1px solid var(--line);font-size:11px;letter-spacing:.07em;color:var(--muted);font-weight:700;background:#fbfbfd}
+  /* school list */
+  .school-item{padding:13px 16px;border-bottom:1px solid var(--line);cursor:pointer;display:flex;align-items:center;gap:12px}
+  .school-item:last-child{border-bottom:none}
+  .school-item:hover{background:#fcfcfe}
+  .school-item.active{background:#fff0f2;box-shadow:inset 3px 0 0 var(--red)}
+  .logo{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:11px;flex-shrink:0}
+  .si-main{flex:1;min-width:0}
+  .si-main .nm{font-weight:600;font-size:14px}
+  .si-main .dv{font-size:11px;color:var(--muted)}
+  .open-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;white-space:nowrap}
+  .op-hi{background:var(--green-soft);color:#0a7d45}
+  .op-md{background:var(--amber-soft);color:#96620a}
+  .op-lo{background:#eef0f5;color:#6b7690}
+  /* detail */
+  .dt-top{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line);background:#fbfbfd;flex-wrap:wrap;gap:10px}
+  .dt-top .l{display:flex;align-items:center;gap:12px}
+  .dt-top h3{font-size:17px;font-weight:700}
+  .dt-top .meta{font-size:12px;color:var(--muted)}
+  .posselect{font-size:13px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;font-family:inherit;font-weight:600}
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:18px 20px}
+  .tile{border:1px solid var(--line);border-radius:12px;padding:14px}
+  .tile .lbl{font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .tile .val{font-size:23px;font-weight:800;letter-spacing:-.5px;margin-top:3px}
+  .tile .sub{font-size:11px;color:var(--muted);margin-top:1px}
+  .tile.accent{background:linear-gradient(135deg,#fff,#fff7f8);border-color:#ffd9df}
+  /* fit banner */
+  .fit{margin:0 20px 16px;border-radius:11px;padding:13px 16px;font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:10px}
+  .fit.good{background:#f0fdf5;border:1px solid #bff0d3;color:#0a7d45}
+  .fit.mid{background:#fffaf0;border:1px solid #fbe3b8;color:#96620a}
+  .fit .dot{width:8px;height:8px;border-radius:50%;background:currentColor;flex-shrink:0}
+  /* class chart */
+  .sec-h{padding:4px 20px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-top:4px}
+  .classbars{display:flex;gap:14px;padding:8px 20px 4px;align-items:flex-end;height:96px}
+  .cb{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;justify-content:flex-end;height:100%}
+  .cb .bar{width:100%;max-width:46px;background:linear-gradient(180deg,#3b82f6,#60a5fa);border-radius:6px 6px 0 0;min-height:3px}
+  .cb .bar.sr{background:linear-gradient(180deg,#f4425a,#ff6b7f)}
+  .cb .n{font-size:12px;font-weight:700}
+  .cb .yl{font-size:11px;color:var(--muted)}
+  .leg{font-size:11px;color:var(--muted);padding:2px 20px 12px}
+  .leg b.sr{color:var(--red)}
+  /* roster table */
+  table{width:100%;border-collapse:collapse}
+  th{font-size:10.5px;color:var(--muted);text-align:left;font-weight:700;padding:9px 20px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:#fbfbfd;text-transform:uppercase;letter-spacing:.04em}
+  th.r,td.r{text-align:right}
+  td{padding:9px 20px;font-size:13px;border-bottom:1px solid var(--line)}
+  tr:last-child td{border-bottom:none}
+  .cls-badge{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:12px;background:#eef0f5;color:#38415a}
+  .cls-badge.sr{background:var(--red-soft);color:#c32b41}
+  /* cta */
+  .cta{padding:16px 20px;border-top:1px solid var(--line);display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:#fbfbfd}
+  .cta .btn{background:var(--red);color:#fff;font-weight:700;font-size:13.5px;padding:10px 18px;border-radius:9px;text-decoration:none;display:inline-flex;align-items:center;gap:8px;border:none;cursor:pointer}
+  .cta .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+  .cta .note{font-size:12px;color:var(--muted);flex:1;min-width:180px}
+  .foot{font-size:11.5px;color:var(--muted);margin-top:18px;text-align:center}
+  @media(max-width:980px){.cols{grid-template-columns:1fr}.tiles{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+  <aside class="side">
+    <div class="brand">
+      <svg class="bolt" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>
+      <h1>PigskinPush</h1>
+    </div>
+    <div class="brand-sub">Recruitment made easy<br><b>Football</b></div>
+    <div class="divider"></div>
+    <div class="nav-label">SCHOOLS</div>
+    <div class="nav-item active"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-6 9 6-9 6-9-6z"/><path d="M3 9v6l9 6 9-6V9"/></svg> My Schools</div>
+    <div class="nav-item"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg> Browse</div>
+    <div class="nav-label" style="margin-top:6px">CAMPAIGNS</div>
+    <div class="nav-item"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg> Dashboard</div>
+    <div class="nav-item"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> New</div>
+    <div class="spacer"></div>
+    <div class="divider"></div>
+    <div class="me"><div class="av" id="avatar">JE</div><div><div style="color:#fff;font-size:13px;font-weight:600">Your Profile</div><small id="whoami">OL · 2027</small></div></div>
+  </aside>
+
+  <main class="main">
+    <div class="head">
+      <h2>RosterIQ <span class="demo-tag">LIVE PROTOTYPE · REAL DATA</span></h2>
+      <p>Pick your position and measurables, then click a school to see if there's realistically a spot for you — computed from 512 real players across 6 programs.</p>
+    </div>
+
+    <div class="profile">
+      <div class="f">
+        <label>I play</label>
+        <select id="posSel">
+          <option value="QB">Quarterback</option>
+          <option value="RB">Running Back</option>
+          <option value="WR">Wide Receiver</option>
+          <option value="TE">Tight End</option>
+          <option value="OL" selected>Offensive Line</option>
+          <option value="DL">Defensive Line</option>
+          <option value="LB">Linebacker</option>
+          <option value="DB">Defensive Back</option>
+          <option value="ST">Special Teams</option>
+        </select>
+      </div>
+      <div class="f">
+        <label>Height</label>
+        <div style="display:flex;gap:6px">
+          <select id="ftSel"><option>5</option><option selected>6</option><option>7</option></select>
+          <select id="inSel"></select>
+        </div>
+      </div>
+      <div class="f">
+        <label>Weight (lb)</label>
+        <input id="wtInp" type="number" value="285" style="width:90px">
+      </div>
+      <div class="f">
+        <label>Division</label>
+        <select id="divSel">
+          <option value="">All divisions</option>
+          <option value="FBS">FBS</option>
+          <option value="FCS">FCS</option>
+          <option value="D2">D2</option>
+        </select>
+      </div>
+      <div class="who">Comparing <b id="whoTxt">a 6'4" / 285 lb OL</b><br>against each program's current room</div>
+    </div>
+
+    <div class="cols">
+      <div class="panel-card">
+        <div class="pc-h">MY SCHOOLS · sorted by opening at your position</div>
+        <div id="schoolList"></div>
+      </div>
+      <div class="panel-card" id="detail"></div>
+    </div>
+
+    <div class="foot" id="foot"></div>
+  </main>
+
+<script>
+const DATA = /*__DATA__*/;
+const PLAYERS = DATA.players, QLINKS = DATA.questionnaires;
+const POS_NAMES={QB:"Quarterbacks",RB:"Running Backs",WR:"Wide Receivers",TE:"Tight Ends",OL:"Offensive Line",DL:"Defensive Line",LB:"Linebackers",DB:"Defensive Backs",ST:"Special Teams"};
+const LOGO={"Baylor":"#154734","Houston":"#c8102e","UTSA":"#00274c","Texas State":"#5a1a2b","SMU":"#354ca1","Stephen F. Austin":"#4b0082"};
+const CLS_ORDER=["FR","SO","JR","SR","GR"];
+const state={school:null,pos:"OL",ht:76,wt:285,div:""};
+
+// inches dropdown
+const inSel=document.getElementById('inSel');
+for(let i=0;i<12;i++){const o=document.createElement('option');o.value=i;o.textContent=i+'"';if(i===4)o.selected=true;inSel.appendChild(o);}
+
+function schools(){const f=state.div?PLAYERS.filter(p=>p.d===state.div):PLAYERS;return [...new Set(f.map(p=>p.s))];}
+function dispH(inch){return inch?Math.floor(inch/12)+"'"+(inch%12)+'"':"—";}
+function avg(arr){const v=arr.filter(x=>x!=null);return v.length?Math.round(v.reduce((a,b)=>a+b,0)/v.length):null;}
+
+function group(school,pos){return PLAYERS.filter(p=>p.s===school&&p.p===pos);}
+function bench(school,pos){
+  const g=group(school,pos);
+  const dist={};CLS_ORDER.forEach(c=>dist[c]=g.filter(p=>p.cl===c).length);
+  const seniors=dist.SR+dist.GR;
+  return {g,n:g.length,avgH:avg(g.map(p=>p.h)),avgW:avg(g.map(p=>p.w)),dist,seniors};
+}
+function openLevel(b){
+  if(b.n===0)return{k:"lo",t:"no data"};
+  const r=b.seniors/b.n;
+  if(b.seniors>=3&&r>=0.22)return{k:"hi",t:"opening likely"};
+  if(b.seniors>=1)return{k:"md",t:"possible"};
+  return{k:"lo",t:"tight room"};
+}
+
+function renderSchools(){
+  const list=document.getElementById('schoolList');list.innerHTML="";
+  const rows=schools().map(s=>({s,b:bench(s,state.pos)}));
+  rows.sort((a,b)=>b.b.seniors-a.b.seniors);
+  rows.forEach(({s,b})=>{
+    const ol=openLevel(b);
+    const div=PLAYERS.find(p=>p.s===s);
+    const el=document.createElement('div');
+    el.className="school-item"+(s===state.school?" active":"");
+    el.innerHTML=`<div class="logo" style="background:${LOGO[s]||'#333'}">${initials(s)}</div>
+      <div class="si-main"><div class="nm">${s}</div><div class="dv">${div.d} · ${div.c}</div></div>
+      <div style="text-align:right"><div class="open-badge op-${ol.k}">${ol.t}</div>
+      <div style="font-size:10.5px;color:var(--muted);margin-top:3px">${b.n} at pos · ${b.seniors} Sr</div></div>`;
+    el.onclick=()=>{state.school=s;render();};
+    list.appendChild(el);
+  });
+}
+function initials(s){return s.split(/[\s.]+/).filter(Boolean).slice(0,2).map(w=>w[0]).join("").toUpperCase();}
+
+function renderDetail(){
+  const d=document.getElementById('detail');
+  const s=state.school, b=bench(s,state.pos), div=PLAYERS.find(p=>p.s===s);
+  const q=QLINKS[s];
+  // fit
+  let fit="",fcls="mid";
+  if(b.avgW){
+    const dw=state.wt-b.avgW, dh=state.ht-(b.avgH||state.ht);
+    const near=Math.abs(dw)<=15;
+    fcls=near?"good":"mid";
+    const wtxt=dw===0?"right at their average weight":`${Math.abs(dw)} lb ${dw<0?"under":"over"} their average`;
+    const htxt=b.avgH?`, ${Math.abs(dh)===0?"matching":Math.abs(dh)+'" '+(dh<0?"under":"over")} their average height`:"";
+    fit=`You are <b>${wtxt}</b>${htxt}. ${near?"You're within their physical range.":"Meaningful physical gap to close."}`;
+  } else {fit="This program doesn't publish height/weight — a data gap to fill.";}
+  // class bars
+  const maxc=Math.max(1,...CLS_ORDER.map(c=>b.dist[c]));
+  const bars=CLS_ORDER.map(c=>`<div class="cb"><div class="n">${b.dist[c]||0}</div>
+    <div class="bar ${c==='SR'||c==='GR'?'sr':''}" style="height:${(b.dist[c]/maxc)*100||2}%"></div>
+    <div class="yl">${c}</div></div>`).join("");
+  // roster
+  const roster=[...b.g].sort((a,b2)=>(b2.w||0)-(a.w||0)).map(p=>`<tr>
+    <td>${p.n}</td><td><span class="cls-badge ${p.cl==='SR'||p.cl==='GR'?'sr':''}">${p.rs?'R-':''}${p.cl}</span></td>
+    <td class="r">${dispH(p.h)}</td><td class="r">${p.w||'—'}</td><td>${p.ht}</td></tr>`).join("")
+    || `<tr><td colspan="5" style="color:var(--muted)">No ${POS_NAMES[state.pos]} data for this program.</td></tr>`;
+
+  d.innerHTML=`
+    <div class="dt-top">
+      <div class="l"><div class="logo" style="background:${LOGO[s]||'#333'}">${initials(s)}</div>
+        <div><h3>${s}</h3><div class="meta">${div.d} · ${div.c}</div></div></div>
+      <div><select class="posselect" id="posSel2">${Object.keys(POS_NAMES).map(k=>`<option value="${k}" ${k===state.pos?'selected':''}>${POS_NAMES[k]}</option>`).join("")}</select></div>
+    </div>
+    <div class="tiles">
+      <div class="tile"><div class="lbl">Players at position</div><div class="val">${b.n}</div><div class="sub">${POS_NAMES[state.pos]}</div></div>
+      <div class="tile"><div class="lbl">Avg height</div><div class="val">${dispH(b.avgH)}</div><div class="sub">current room</div></div>
+      <div class="tile"><div class="lbl">Avg weight</div><div class="val">${b.avgW?b.avgW+' lb':'—'}</div><div class="sub">current room</div></div>
+      <div class="tile accent"><div class="lbl">Seniors leaving</div><div class="val">${b.seniors}</div><div class="sub">spots opening soon</div></div>
+    </div>
+    <div class="fit ${fcls}"><span class="dot"></span><div>${fit}</div></div>
+    <div class="sec-h">Roster composition by class</div>
+    <div class="classbars">${bars}</div>
+    <div class="leg">Blue = underclass returning · <b class="sr">Red = seniors/grads leaving</b>. More red than blue at your position = a room turning over.</div>
+    <table><thead><tr><th>${POS_NAMES[state.pos]}</th><th>Class</th><th class="r">Ht</th><th class="r">Wt</th><th>Hometown</th></tr></thead><tbody>${roster}</tbody></table>
+    <div class="cta">
+      ${q?`<a class="btn" href="${q}" target="_blank" rel="noopener">✎ Fill out recruit questionnaire</a>`:`<button class="btn ghost" disabled>Questionnaire link not on file</button>`}
+      <button class="btn ghost">☆ Add to campaign</button>
+      <div class="note">Email-free first touch: the questionnaire is the program's official front door and coaches monitor it. ${q?'':'(link is a data gap to fill)'}</div>
+    </div>`;
+  document.getElementById('posSel2').onchange=e=>{state.pos=e.target.value;document.getElementById('posSel').value=state.pos;syncWho();render();};
+}
+
+function syncWho(){
+  document.getElementById('whoTxt').textContent=`a ${dispH(state.ht)} / ${state.wt} lb ${state.pos}`;
+  document.getElementById('whoami').textContent=`${state.pos} · 2027`;
+}
+function render(){if(!state.school)state.school=schools()[0];renderSchools();renderDetail();
+  document.getElementById('foot').textContent=`Prototype wired to real roster data pulled from official team pages (512 players / 6 schools). RosterIQ, fit, and questionnaire routing all run without any coach email.`;}
+
+// controls
+document.getElementById('posSel').onchange=e=>{state.pos=e.target.value;syncWho();render();};
+function updHt(){state.ht=parseInt(document.getElementById('ftSel').value)*12+parseInt(document.getElementById('inSel').value);syncWho();renderDetail();}
+document.getElementById('ftSel').onchange=updHt;
+document.getElementById('inSel').onchange=updHt;
+document.getElementById('divSel').onchange=e=>{state.div=e.target.value;if(state.school&&!schools().includes(state.school))state.school=null;render();};
+document.getElementById('wtInp').oninput=e=>{state.wt=parseInt(e.target.value)||0;syncWho();renderDetail();};
+
+syncWho();render();
+</script>
+</body>
+</html>

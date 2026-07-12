@@ -125,7 +125,7 @@
   <main class="main">
     <div class="head">
       <h2>RosterIQ <span class="demo-tag">LIVE PROTOTYPE · REAL DATA</span></h2>
-      <p>Pick your position and measurables, then click a school to see if there's realistically a spot for you — computed from 23,663 real players across 219 programs — FBS, FCS, and D2.</p>
+      <p>Pick your position and measurables, then click a school to see if there's realistically a spot for you — computed from 23,663 real players across 219 programs — D2, FBS, FCS.</p>
     </div>
 
     <div class="profile">
@@ -282,7 +282,7 @@ function syncWho(){
   document.getElementById('whoami').textContent=`${state.pos} · 2027`;
 }
 function render(){if(!state.school)state.school=schools()[0];renderSchools();renderDetail();
-  document.getElementById('foot').textContent=`Prototype wired to real roster data pulled from official team pages (23,663 players / 219 schools (FBS+FCS+D2)). RosterIQ, fit, and questionnaire routing all run without any coach email.`;}
+  document.getElementById('foot').textContent=`Prototype wired to real roster data pulled from official team pages (23,663 players / 219 schools (D2+FBS+FCS)). RosterIQ, fit, and questionnaire routing all run without any coach email.`;}
 
 // controls
 document.getElementById('posSel').onchange=e=>{state.pos=e.target.value;syncWho();render();};
