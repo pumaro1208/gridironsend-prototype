@@ -1,7 +1,7 @@
 name: Refresh rosters
 on:
   schedule:
-    - cron: "0 8 1 * *"   # 08:00 UTC on the 1st of each month
+    - cron: "0 8 * * 1"   # 08:00 UTC every Monday
   workflow_dispatch: {}    # allow manual runs from the Actions tab
 permissions:
   contents: write
@@ -18,8 +18,14 @@ jobs:
         run: python scrape_rosters.py schools_seed.csv players_new.csv
       - name: Merge with carry-forward guard
         run: python merge_rosters.py players_clean.csv players_new.csv
-      - name: Bank a dated season snapshot
-        run: cp players_clean.csv "history/$(date +%F).csv"
+      - name: Stamp data date and bank a snapshot (only if rosters changed)
+        run: |
+          if ! git diff --quiet -- players_clean.csv; then
+            date -u +%F > data_updated.txt
+            cp players_clean.csv "history/$(date +%F).csv"
+          else
+            echo "No roster changes this week — skipping snapshot"
+          fi
       - name: Rebuild the page
         run: python build_page.py
       - name: Commit and push if changed

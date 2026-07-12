@@ -31,9 +31,21 @@ data = json.dumps({"players": players, "questionnaires": QUESTIONNAIRES}, separa
 
 html = open("proto_template.html", encoding="utf-8").read()
 html = html.replace("/*__DATA__*/", data)
+upd = ""
+try:
+    upd = open("data_updated.txt").read().strip()
+except FileNotFoundError:
+    pass
+upd_disp = ""
+if upd:
+    from datetime import date as _d
+    y, m, dd = map(int, upd.split("-"))
+    upd_disp = _d(y, m, dd).strftime("%b %-d, %Y")
 html = html.replace("512 real players across 6 programs",
-                    f"{n_players:,} real players across {n_schools} programs — {', '.join(divs)}")
+                    f"{n_players:,} real players across {n_schools} programs — {', '.join(divs)}"
+                    + (f". Rosters updated {upd_disp}" if upd_disp else ""))
 html = html.replace("512 players / 6 schools",
-                    f"{n_players:,} players / {n_schools} schools ({'+'.join(divs)})")
+                    f"{n_players:,} players / {n_schools} schools ({'+'.join(divs)})"
+                    + (f" · data updated {upd_disp}" if upd_disp else ""))
 open("index.html", "w", encoding="utf-8").write(html)
 print(f"built index.html: {n_players:,} players, {n_schools} schools, divisions {divs}")
